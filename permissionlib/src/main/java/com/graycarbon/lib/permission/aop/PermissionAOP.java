@@ -200,9 +200,13 @@ public class PermissionAOP {
      */
     private void executePermissionApply(Activity activity, String[] permissions, int requestCode, IPermissionListener iPermissionListener) {
         String[] hasRequests = checkPermissionsIsHave(activity, permissions);
-        if (hasRequests.length > 0) { // 需要进行权限申请
-            ActivityCompat.requestPermissions(activity, hasRequests, requestCode);
-        } else { // 都已获取权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { // 需要动态申请
+            if (hasRequests.length > 0) { // 需要进行权限申请
+                ActivityCompat.requestPermissions(activity, hasRequests, requestCode);
+            } else { // 都已获取权限
+                mPermissionListener.permissionGranted();
+            }
+        } else { // API23以下直接通过权限
             mPermissionListener.permissionGranted();
         }
     }
