@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 
 import com.graycarbon.lib.permission.annotation.PermissionRequest;
@@ -126,15 +127,14 @@ public class PermissionAOP {
             }
         };
         // 发起请求
-        executePermissionApply(context, permissionRequest.value(),
-                PERMISSION_REQUEST_CODE, mPermissionListener);
+        executePermissionApply(context, permissionRequest.value(), PERMISSION_REQUEST_CODE, mPermissionListener);
     }
 
     /**
      * 获取权限请求的结果
      *
      * @param joinPoint 获得切面对象
-     * @throws Throwable
+     * @throws Throwable 异常处理
      */
     @After("execution(* android.app.Activity.onRequestPermissionsResult(..))")
     @SuppressLint("NewApi")
@@ -179,10 +179,12 @@ public class PermissionAOP {
                 }
             }
             if (permissionsCancel.size() > 0) {
-                mPermissionListener.permissionCancel(permissionsCancel.toArray(new String[permissionsCancel.size()]));
+                String[] temp = new String[permissionsCancel.size()];
+                mPermissionListener.permissionCancel(permissionsCancel.toArray(temp));
             }
             if (permissionsDenied.size() > 0) {
-                mPermissionListener.permissionDenied(permissionsDenied.toArray(new String[permissionsDenied.size()]));
+                String[] temp = new String[permissionsDenied.size()];
+                mPermissionListener.permissionDenied(permissionsDenied.toArray(temp));
             }
             // 所有权限都通过，调用通过
             if (permissionsCancel.size() == 0 && permissionsDenied.size() == 0) {
@@ -214,12 +216,16 @@ public class PermissionAOP {
     @SuppressLint("NewApi")
     private String[] checkPermissionsIsHave(Activity activity, String[] permissions) {
         ArrayList<String> list = new ArrayList<>();
-        for (String permission : permissions) {
-            if (activity.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                list.add(permission);
+        // 这里是为了防止API6.0以下系统调用时crash
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            for (String permission : permissions) {
+                if (activity.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                    list.add(permission);
+                }
             }
         }
-        return list.toArray(new String[list.size()]);
+        String[] temp = new String[list.size()];
+        return list.toArray(temp);
     }
 
 }
